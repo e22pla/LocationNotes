@@ -1,0 +1,233 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title></title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	    <link rel="stylesheet" href="jquery.mobile-1.1.0.min.css" />
+	    <style type="text/css">
+      		html { height: 100% }
+	      	body { height: 100%; margin: 0; padding: 0 }
+	      	#noteDetailDate {
+	      		position: absolute;
+				top: 41px;
+				right: 0px;
+				height: 0px;
+			}
+			#map_canvas { height: 100% }
+			#map_canvas_detail { height: 100% }
+	    </style>
+	    
+		<script type="text/javascript" src="jquery-1.6.4.min.js"></script>
+		<script type="text/javascript" src="jquery.mobile-1.1.0.min.js"></script>
+		<script type="text/javascript" src="geolocation.js"></script>
+		<script type="text/javascript" src="netmera.js"></script>
+	    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCioIBayrQxLPPnEfHI0CvLthLd5eJgon0&sensor=false"></script>
+<!-- 	    <script type="text/javascript" src="jquery.ui.map.full.min.js"></script> -->
+<!-- 	    <script type="text/javascript" src="markerclusterer.min.js"></script> -->
+	    <script type="text/javascript" src="jquery.dateFormat-1.0.js"></script>
+	    
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var page = 0;
+				var mapCanvas = null;
+				var mapCanvasDetail = null;
+				var searchText = null;
+				var x = new netmera();
+				x.init("WVhCd1ZYSnNQV2gwZEhBbE0wRWxNa1lsTWtZMk1EYzBOamczTXk1dVpYUnRaWEpoTG1OdmJTVXpRVGd3SlRKR2JXOWlhVzFsY21FbE1rWm5ZV1JuWlhRbE1rWm9iMjFsTG5odGJDWnViVk5wZEdWVmNtdzlhSFIwY0NVelFTVXlSaVV5UmpZd056UTJPRGN6TG01bGRHMWxjbUV1WTI5dEpUTkJPREFtYlc5a2RXeGxTV1E5TWprd055WmhjSEJKWkQwMk1EYzBOamczTXladWJWUmxiWEJzWVhSbFBXMXZZbWwwWlcxd2JHRjBaU1p2ZDI1bGNrbGtQWFIxY21GdUxXdHZibUZ1Sm1SdmJXRnBiajF1WlhSdFpYSmhMbU52YlNadWJWTnBkR1U5TmpBM05EWTROek1tYjNkdVpYSlNiMnhsVkhsd1pUMHhKblpwWlhkbGNsSnZiR1ZVZVhCbFBURW1kbWxsZDJWeVNXUTlkSFZ5WVc0dGEyOXVZVzRt");
+				
+				function initial() {
+					$.geolocation.find(function(location) {
+						var yourStartLatLng = new google.maps.LatLng(location.latitude, location.longitude);
+						var myOptions = {
+							center: yourStartLatLng,
+						    zoom: 14,
+						    mapTypeId: google.maps.MapTypeId.ROADMAP
+						};
+						mapCanvas = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+		            	
+//	 	            	$('#map_canvas').gmap('addMarker', {
+//	 	            		'position': new google.maps.LatLng(location.latitude, location.longitude)
+//	 	        		}).click(function() {
+//	 	        			$('#map_canvas').gmap('openInfoWindow', { content : 'You are here!' }, this);
+//	 	        		});
+		            	
+		            	var contentService = new x.contentService("Blog2");
+						contentService.setMax(10);
+						contentService.setPage(page);
+		            	
+						contentService.circleSearch(x.geoLocation(location.latitude, location.longitude), 5, "noteLocation", function() {
+							var entries = contentService.getEntries();
+							var totalResults = contentService.getTotalResults();
+							if (totalResults > 0) {
+								$.each(entries, function(key, val) {
+									var myLatlng = new google.maps.LatLng(val.get("latitude"), val.get("longitude"));
+									var marker = new google.maps.Marker({
+										position: myLatlng,
+									    map: mapCanvas
+									});
+									google.maps.event.addListener(marker, 'click', function() {
+										detailPage(val);
+									});
+								});
+							}
+//	 						$('#map_canvas').gmap('set', 'MarkerClusterer', new MarkerClusterer($('#map_canvas').gmap('get', 'map'), $('#map_canvas').gmap('get', 'markers')));
+						});
+					});
+				}
+				
+				initial();
+				
+				function putLiItem(val) {
+					$liItem = $("<li/>");
+					$aItem = $("<a/>");
+					$aItem.text(val.get("description"));
+					$aItem.click(function() {
+						detailPage(val);
+					});
+					$liItem.append($aItem);
+					
+					$("#allNotesListView").append($liItem);
+				}
+
+				function detailPage(val) {
+					var temp = val.get("description");
+				    var index = temp.indexOf("\n");
+		        	while (index != -1) {
+		            	temp = temp.replace("\n","<br/>");
+		            	index = temp.indexOf("\n");
+		        	}
+			        $("#noteDetailDescription").html(temp);
+
+			        $("#noteDetailDate").html($.format.date(val.getContent()["updateDate"], "dd/MM/yyyy"));
+			        
+					if (val.get("latitude") && val.get("longitude")) {
+						var langLng = new google.maps.LatLng(val.get("latitude"), val.get("longitude"));
+				        mapCanvasDetail = new google.maps.Map(document.getElementById("map_canvas_detail"), { center: langLng, zoom: 14, mapTypeId: google.maps.MapTypeId.ROADMAP });
+						
+						var marker = new google.maps.Marker({ position: langLng, map: mapCanvasDetail });
+					}
+					$.mobile.changePage("#noteDetail");
+				}
+
+				$("#saveButton").live('click', function() {
+					$.geolocation.find(function(location) {
+						var contentContext = new x.contentContext("Blog2");
+						contentContext.addGeoLocation("noteLocation", x.geoLocation(location.latitude, location.longitude));
+						contentContext.add("description", $("#description").val());
+						contentContext.add("latitude", location.latitude);
+						contentContext.add("longitude", location.longitude);
+						contentContext.create(function() {
+							detailPage(contentContext);
+						});
+					});
+				});
+				
+				$("#searchItem").live("keydown", function() {
+					page = 0;
+					searchText = $("#searchItem").val();
+					refreshItems();
+				});
+				
+				$("#loadMore").live('click', function() {
+					$(this).parent().remove();
+					page++;
+					refreshItems();
+				});
+				
+				function refreshItems() {
+					var contentService = new x.contentService("Blog2");
+					contentService.setMax(10);
+					contentService.setPage(page);
+					contentService.setSortBy("creationdate");
+					contentService.setSortOrder("descending");
+					
+					if (searchText)
+						contentService.setSearchText(searchText);
+
+					contentService.search(function() {
+						$.mobile.showPageLoadingMsg();
+						var entries = contentService.getEntries();
+						var totalResults = contentService.getTotalResults();
+						if (totalResults > 0) {
+							$.each(entries, function(key, val) {
+								putLiItem(val);
+							});
+							
+							var currentSize = (page * 10) + 10;
+							if (entries.length == 10 && totalResults > currentSize) {
+								$("#allNotesListView").append("<li><a href='#' id='loadMore'>Load More</a></li>");
+							}
+						} else {
+							$("#allNotesListView").append("<li>No results found.</li>");
+						}
+
+						$.mobile.hidePageLoadingMsg();
+						$("#allNotesListView").listview("refresh");
+					});
+				}
+				
+				$(document).delegate("#allNotes", "pageshow", function() {
+					$("#allNotesListView").html("");
+					$("#allNotesDivForm").remove();
+					page = 0;
+					refreshItems();
+					$liSearchItem = $("<form class='ui-listview-filter ui-bar-c' id='allNotesDivForm'><div class='ui-input-search ui-shadow-inset ui-btn-corner-all ui-btn-shadow ui-icon-searchfield ui-body-c ui-focus'><input placeholder='Filter items...' id='searchItem' class='ui-input-text ui-body-c'/><a href='#' class='ui-input-clear ui-btn ui-btn-up-c ui-shadow ui-btn-corner-all ui-fullsize ui-btn-icon-notext ui-input-clear-hidden' title='clear text' data-corners='true' data-shadow='true' data-iconshadow='true'><span class='ui-btn-inner ui-btn-corner-all'><span class='ui-btn-text'>clear text</span><span class='ui-icon ui-icon-delete ui-icon-shadow'>&nbsp;</span></span></a></div></form>");
+					$("#allNotesDiv").prepend($liSearchItem);
+				});
+				
+				$(document).delegate("#newNote", "pageshow", function() {
+					$("#description").val("");
+				});
+				
+				$(document).delegate("#home", "pageshow", function() { initial(); });
+			});
+    	</script>
+	</head>
+	<body>
+		<div data-role="page" id="home">
+			<div data-role="header"><h1>Location Notes</h1></div>
+			<div data-role="content">
+				<div id="map_canvas" style="width:100%;height:300px;"></div>
+				<br/><br/>
+				<ul data-role="listview">
+					<li><a href="#newNote" data-rel="dialog">New Note</a></li>
+					<li><a href="#allNotes">All Notes</a></li>
+				</ul>
+			</div>
+			<div data-role="footer"><h4>HTML5 App For NETMERA JS API</h4></div>
+		</div>
+		
+		<div data-role="page" id="newNote">
+			<div data-role="header"><h1>Location Notes</h1></div>
+			<div data-role="content">
+				<div data-role="fieldcontain" class="ui-hide-label">
+					<label for="description">Description:</label>
+					<textarea name="description" id="description" placeholder="Note Description"></textarea>
+				</div>
+				<input type="button" id="saveButton" value="Save" />
+			</div>
+			<div data-role="footer"><h4>HTML5 App For NETMERA JS API</h4></div>
+		</div>
+		
+		<div data-role="page" id="allNotes">
+			<div data-role="header"><h1>Location Notes</h1></div>
+			<div data-role="content">
+				<div class="content-primary" id="allNotesDiv">
+					<ul data-role="listview" id="allNotesListView"></ul>
+				</div>
+			</div>
+			<div data-role="footer"><h4>HTML5 App For NETMERA JS API</h4></div>
+		</div>
+		
+		<div data-role="page" id="noteDetail">
+			<div data-role="header"><h1>Location Notes</h1></div>
+			<div data-role="content">
+				<h3 id="noteDetailDate"></h3>
+				<br/>
+				<p id="noteDetailDescription"></p>
+				<div id="map_canvas_detail" style="width:100%;height:300px;"></div>
+			</div>
+			<div data-role="footer"><h4>HTML5 App For NETMERA JS API</h4></div>
+		</div>
+  	</body>
+</html>
