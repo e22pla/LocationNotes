@@ -20,10 +20,8 @@
 		<script type="text/javascript" src="jquery-1.6.4.min.js"></script>
 		<script type="text/javascript" src="jquery.mobile-1.1.0.min.js"></script>
 		<script type="text/javascript" src="geolocation.js"></script>
-		<script type="text/javascript" src="netmera.js"></script>
+		<script type="text/javascript" src="jquery-netmera-1.0.js"></script>
 	    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCioIBayrQxLPPnEfHI0CvLthLd5eJgon0&sensor=false"></script>
-<!-- 	    <script type="text/javascript" src="jquery.ui.map.full.min.js"></script> -->
-<!-- 	    <script type="text/javascript" src="markerclusterer.min.js"></script> -->
 	    <script type="text/javascript" src="jquery.dateFormat-1.0.js"></script>
 	    
 		<script type="text/javascript">
@@ -131,10 +129,10 @@
 				$("#loadMore").live('click', function() {
 					$(this).parent().remove();
 					page++;
-					refreshItems();
+					refreshItems(true);
 				});
 				
-				function refreshItems() {
+				function refreshItems(loadMore) {
 					var contentService = new x.contentService("Blog2");
 					contentService.setMax(10);
 					contentService.setPage(page);
@@ -145,6 +143,9 @@
 						contentService.setSearchText(searchText);
 
 					contentService.search(function() {
+						if (!loadMore)
+							$("#allNotesListView").html("");
+						
 						$.mobile.showPageLoadingMsg();
 						var entries = contentService.getEntries();
 						var totalResults = contentService.getTotalResults();
