@@ -1,4 +1,6 @@
-LocationNotes is a sample application that uses Netmera’s JS API. Simply it keeps geo-location code and small notes that added by users on cloud. Also it can search on map and shows the contents within 5 kilometers radius of users current location.
+# LocationNotes
+
+Is a sample application that uses Netmera’s JS API. Simply it keeps geo-location code and small notes that added by users on cloud. Also it can search on map and shows the contents within 5 kilometers radius of users current location.
 
 Netmera allows circular search with few lines of code.
 			
